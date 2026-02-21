@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr.Sha3ban | Industrial HPGL Engine</title>
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --sidebar-bg: #161616;
+            --card-bg: #1e1e1e;
+            --accent: #0078d4;
+            --accent-glow: rgba(0, 120, 212, 0.3);
+            --border: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --success: #2ea043;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-main); color: var(--text-primary); overflow: hidden;
+        }
+
+        /* Main Layout */
+        #app-container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Sidebar Styles */
+        #sidebar {
+            width: 320px; background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            z-index: 20;
+        }
+
+        .brand {
+            padding: 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 15px;
+        }
+        
+        /* Updated Logo Styles */
+        .logo-container {
+            width: 42px; height: 42px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            padding: 4px;
+        }
+        .logo-img {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain;
+        }
+
+        .scroll-area { flex: 1; overflow-y: auto; padding: 10px; }
+        
+        .panel {
+            background: var(--card-bg); border-radius: 8px;
+            border: 1px solid var(--border); margin-bottom: 12px;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 12px 16px; background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border);
+            font-size: 11px; font-weight: 700; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .panel-content { padding: 16px; }
+
+        /* Inputs & Buttons */
+        .btn {
+            width: 100%; padding: 12px; border-radius: 6px;
+            border: 1px solid var(--border); background: #262626;
+            color: white; cursor: pointer; font-size: 13px; font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 8px;
+        }
+        .btn:hover { background: #323232; border-color: #444; transform: translateY(-1px); }
+        .btn-primary { background: var(--accent); border: none; }
+        .btn-primary:hover { background: #1086e1; box-shadow: 0 4px 12px var(--accent-glow); }
+        .btn-success { background: var(--success); border: none; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* Viewport Styles */
+        #viewport { flex: 1; position: relative; display: flex; flex-direction: column; }
+        
+        #toolbar-top {
+            height: 48px; background: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 20px;
+            justify-content: space-between; font-size: 13px;
+        }
+
+        #canvas-wrapper { flex: 1; position: relative; cursor: crosshair; background: #000; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* HUD Overlays */
+        #hud-coordinates {
+            position: absolute; bottom: 24px; left: 24px;
+            background: rgba(15,15,15,0.8); border: 1px solid var(--border);
+            padding: 12px 18px; border-radius: 8px; backdrop-filter: blur(10px);
+            font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 13px;
+            color: #00ff9d; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        #cross-h, #cross-v { position: absolute; background: rgba(0, 120, 212, 0.4); pointer-events: none; display: none; z-index: 5; }
+        #cross-h { height: 1px; width: 100%; }
+        #cross-v { width: 1px; height: 100%; }
+
+        /* Layers */
+        .layer-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.2);
+            margin-bottom: 6px; font-size: 12px; border: 1px solid transparent;
+        }
+        .layer-row:hover { border-color: var(--accent); }
+        .swatch { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+
+        /* Custom Switch */
+        .switch-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
+        input[type="checkbox"] { cursor: pointer; accent-color: var(--accent); width: 16px; height: 16px; }
+
+        .meta-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); }
+        .meta-val { color: var(--text-primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <aside id="sidebar">
+        <div class="brand">
+            <div class="logo-container">
+                <img src="https://avatars.githubusercontent.com/u/87359096?v=4" alt="Logo" class="logo-img">
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 16px; letter-spacing: -0.5px;">Mr.sha3ban <span style="color:var(--accent)">PLT viewer</span></div>
+                <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">+201066800808</div>
+            </div>
+        </div>
+
+        <div class="scroll-area">
+            <div class="panel">
+                <div class="panel-header">File Operations</div>
+                <div class="panel-content">
+                    <input type="file" id="fileInput" style="display:none" accept=".plt,.hpgl,.hpg">
+                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                        <span>📂</span> Load HPGL Marker
+                    </button>
+                    <button class="btn btn-success" onclick="engine.exportJPG()">
+                        <span>📸</span> Export as High-Res JPG
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Viewport Settings</div>
+                <div class="panel-content">
+                    <div class="grid-2">
+                        <button class="btn" onclick="engine.resetView()">Fit All</button>
+                        <button class="btn" onclick="engine.zoomManual(1.2)">Zoom +</button>
+                    </div>
+                    <div class="switch-container">
+                        <span>Show Reference Grid</span>
+                        <input type="checkbox" id="showGrid" checked onchange="engine.render()">
+                    </div>
+                    <div class="switch-container">
+                        <span>CAD Crosshair</span>
+                        <input type="checkbox" id="showCross" onchange="engine.toggleCross(this.checked)">
+                    </div>
+                </div>
+            </div>
+
+            <div id="layers-panel" class="panel" style="display:none">
+                <div class="panel-header">Pen Assignments</div>
+                <div id="layer-list" class="panel-content"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Marker Dimensions</div>
+                <div class="panel-content">
+                    <div id="meta-display">
+                        <div style="text-align:center; color:var(--text-secondary); font-size:12px; padding:10px;">Load a file to see specs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main id="viewport">
+        <div id="toolbar-top">
+            <div id="current-filename" style="color:var(--text-secondary)">No Project Active</div>
+            <div style="display:flex; gap:20px; color:var(--text-secondary)">
+                <span>Scale: <b id="ui-scale" style="color:white">1.0x</b></span>
+                <span>Units: <b style="color:white">Metric (cm)</b></span>
+            </div>
+        </div>
+        <div id="canvas-wrapper">
+            <div id="cross-h"></div>
+            <div id="cross-v"></div>
+            <canvas id="cadCanvas"></canvas>
+            <div id="hud-coordinates">
+                X: <span id="val-x">0.00</span> <span style="opacity:0.4">|</span> Y: <span id="val-y">0.00</span> <span style="font-size:10px; color:var(--text-secondary); margin-left:5px;">cm</span>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+class HPGLEngine {
+    constructor() {
+        this.canvas = document.getElementById('cadCanvas');
+        this.ctx = this.canvas.getContext('2d', { alpha: false });
+        this.paths = [];
+        this.view = { x: 0, y: 0, scale: 1 };
+        this.bounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+        this.isDragging = false;
+        this.lastMouse = { x: 0, y: 0 };
+        
+        this.init();
+    }
+
+    init() {
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+
+        this.canvas.addEventListener('mousedown', e => {
+            if(e.button === 0) {
+                this.isDragging = true;
+                this.lastMouse = { x: e.clientX, y: e.clientY };
+            }
+        });
+
+        window.addEventListener('mousemove', e => {
+            const rect = this.canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            if(document.getElementById('showCross').checked) {
+                document.getElementById('cross-h').style.top = my + 'px';
+                document.getElementById('cross-v').style.left = mx + 'px';
+            }
+
+            const world = this.screenToWorld(mx, my);
+            document.getElementById('val-x').innerText = (world.x / 400).toFixed(2);
+            document.getElementById('val-y').innerText = (world.y / 400).toFixed(2);
+
+            if (this.isDragging) {
+                this.view.x += e.clientX - this.lastMouse.x;
+                this.view.y += e.clientY - this.lastMouse.y;
+                this.lastMouse = { x: e.clientX, y: e.clientY };
+                this.render();
+            }
+        });
+
+        window.addEventListener('mouseup', () => this.isDragging = false);
+        this.canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            this.zoomAt(e.clientX, e.clientY, e.deltaY > 0 ? 0.85 : 1.15);
+        }, { passive: false });
+
+        document.getElementById('fileInput').addEventListener('change', e => this.handleFile(e));
+    }
+
+    resize() {
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = this.canvas.clientWidth * dpr;
+        this.canvas.height = this.canvas.clientHeight * dpr;
+        this.ctx.scale(dpr, dpr);
+        this.render();
+    }
+
+    screenToWorld(sx, sy) {
+        return {
+            x: (sx - this.view.x) / this.view.scale,
+            y: (sy - this.view.y) / (this.view.scale * -1) 
+        };
+    }
+
+    zoomAt(clientX, clientY, factor) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mx = clientX - rect.left;
+        const my = clientY - rect.top;
+        const wx = (mx - this.view.x) / this.view.scale;
+        const wy = (my - this.view.y) / this.view.scale;
+        this.view.scale *= factor;
+        this.view.x = mx - wx * this.view.scale;
+        this.view.y = my - wy * this.view.scale;
+        document.getElementById('ui-scale').innerText = this.view.scale.toFixed(2) + 'x';
+        this.render();
+    }
+
+    zoomManual(factor) { this.zoomAt(window.innerWidth/2, window.innerHeight/2, factor); }
+
+    handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('current-filename').innerText = file.name;
+        const reader = new FileReader();
+        reader.onload = (ev) => this.parseHPGL(ev.target.result);
+        reader.readAsText(file);
+    }
+
+    parseHPGL(text) {
+        this.paths = [];
+        let lastPos = { x: 0, y: 0 }, penDown = false, isAbs = true, currentPen = 1;
+        const commands = text.match(/[A-Z]{2}[^A-Z;]*/gi) || [];
+        const colors = ['#333', '#FFFFFF', '#FF3D00', '#00E676', '#2979FF', '#FFEA00', '#D500F9', '#00E5FF'];
+
+        commands.forEach(cmdStr => {
+            const cmd = cmdStr.substring(0, 2).toUpperCase();
+            const args = (cmdStr.substring(2).match(/[-+]?\d*\.?\d+/g) || []).map(Number);
+            if (cmd === 'SP') currentPen = args[0] || 1;
+            if (cmd === 'PA') isAbs = true;
+            if (cmd === 'PR') isAbs = false;
+            if (cmd === 'PU' || cmd === 'PD') {
+                penDown = (cmd === 'PD');
+                for (let i = 0; i < args.length; i += 2) {
+                    const nx = isAbs ? args[i] : lastPos.x + args[i];
+                    const ny = isAbs ? args[i+1] : lastPos.y + args[i+1];
+                    if (penDown) {
+                        this.paths.push({ x1: lastPos.x, y1: lastPos.y, x2: nx, y2: ny, color: colors[currentPen % colors.length], pen: currentPen });
+                    }
+                    lastPos = { x: nx, y: ny };
+                }
+            }
+        });
+
+        this.updateLayerUI(colors);
+        this.calculateBounds();
+        this.resetView();
+        
+        const wCm = (this.bounds.maxX - this.bounds.minX)/400;
+        const hCm = (this.bounds.maxY - this.bounds.minY)/400;
+        document.getElementById('meta-display').innerHTML = `
+            <div class="meta-item"><span>Width:</span><span class="meta-val">${wCm.toFixed(1)} cm</span></div>
+            <div class="meta-item"><span>Height:</span><span class="meta-val">${hCm.toFixed(1)} cm</span></div>
+            <div class="meta-item"><span>Nodes:</span><span class="meta-val">${this.paths.length.toLocaleString()}</span></div>
+        `;
+    }
+
+    calculateBounds() {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        this.paths.forEach(p => {
+            minX = Math.min(minX, p.x1, p.x2); maxX = Math.max(maxX, p.x1, p.x2);
+            minY = Math.min(minY, p.y1, p.y2); maxY = Math.max(maxY, p.y1, p.y2);
+        });
+        this.bounds = { minX, minY, maxX, maxY };
+    }
+
+    resetView() {
+        const pad = 80;
+        const cw = this.canvas.clientWidth - pad * 2;
+        const ch = this.canvas.clientHeight - pad * 2;
+        const bw = this.bounds.maxX - this.bounds.minX;
+        const bh = this.bounds.maxY - this.bounds.minY;
+        this.view.scale = Math.min(cw / bw, ch / bh);
+        this.view.x = (this.canvas.clientWidth - bw * this.view.scale) / 2 - this.bounds.minX * this.view.scale;
+        this.view.y = (this.canvas.clientHeight + bh * this.view.scale) / 2 + this.bounds.minY * this.view.scale;
+        document.getElementById('ui-scale').innerText = this.view.scale.toFixed(2) + 'x';
+        this.render();
+    }
+
+    toggleCross(show) {
+        const s = show ? 'block' : 'none';
+        document.getElementById('cross-h').style.display = s;
+        document.getElementById('cross-v').style.display = s;
+    }
+
+    render(targetCtx = this.ctx, targetW = this.canvas.width, targetH = this.canvas.height, isExport = false) {
+        targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+        targetCtx.fillStyle = isExport ? '#FFFFFF' : '#000000';
+        targetCtx.fillRect(0, 0, targetW, targetH);
+
+        if (!isExport && document.getElementById('showGrid').checked) {
+            this.drawGrid(targetCtx, targetW, targetH);
+        }
+
+        targetCtx.translate(this.view.x, this.view.y);
+        targetCtx.scale(this.view.scale, -this.view.scale);
+
+        targetCtx.lineWidth = isExport ? (1.8 / this.view.scale) : (1.2 / this.view.scale);
+        targetCtx.lineCap = 'round';
+
+        const groups = {};
+        this.paths.forEach(p => {
+            let col = isExport ? '#000000' : p.color;
+            if (!groups[col]) groups[col] = [];
+            groups[col].push(p);
+        });
+
+        for (const col in groups) {
+            targetCtx.beginPath();
+            targetCtx.strokeStyle = col;
+            groups[col].forEach(p => {
+                targetCtx.moveTo(p.x1, p.y1);
+                targetCtx.lineTo(p.x2, p.y2);
+            });
+            targetCtx.stroke();
+        }
+    }
+
+    drawGrid(ctx, w, h) {
+        const step = 400 * this.view.scale; // 1cm
+        if (step < 10) return;
+        ctx.beginPath();
+        ctx.strokeStyle = '#1a1a1a';
+        for (let x = this.view.x % step; x < w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+        for (let y = this.view.y % step; y < h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+        ctx.stroke();
+    }
+
+    updateLayerUI(colors) {
+        const list = document.getElementById('layer-list');
+        const panel = document.getElementById('layers-panel');
+        list.innerHTML = '';
+        const pens = [...new Set(this.paths.map(p => p.pen))];
+        if(pens.length > 0) panel.style.display = 'block';
+        pens.forEach(pen => {
+            const item = document.createElement('div');
+            item.className = 'layer-row';
+            item.innerHTML = `<span>Pen Assignment ${pen}</span><div class="swatch" style="background:${colors[pen % colors.length]}"></div>`;
+            list.appendChild(item);
+        });
+    }
+
+    exportJPG() {
+        if (!this.paths.length) return;
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = this.canvas.width;
+        exportCanvas.height = this.canvas.height;
+        this.render(exportCanvas.getContext('2d'), exportCanvas.width, exportCanvas.height, true);
+        const link = document.createElement('a');
+        link.download = `Marker_${Date.now()}.jpg`;
+        link.href = exportCanvas.toDataURL('image/jpeg', 0.98);
+        link.click();
+    }
+}
+
+const engine = new HPGLEngine();
+</script>
+</body>
+</html>
