@@ -443,21 +443,22 @@ class HPGLEngine {
 }
 
 const engine = new HPGLEngine();
-    // This handles the file when opened from WhatsApp/Android System
+ // The "Catcher" for WhatsApp files
 if ('launchQueue' in window) {
-    launchQueue.setConsumer((launchParams) => {
+    launchQueue.setConsumer(async (launchParams) => {
+        // This triggers when you tap the file in WhatsApp
         if (launchParams.files && launchParams.files.length) {
-            const fileHandle = launchParams.files[0];
-            fileHandle.getFile().then(file => {
-                engine.handleFile(file); // Sends file to your existing engine
-            });
+            for (const fileHandle of launchParams.files) {
+                const file = await fileHandle.getFile();
+                // Logic to load the file into your existing engine
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    engine.parseHPGL(e.target.result); 
+                };
+                reader.readAsText(file);
+            }
         }
     });
-}
-
-// Service Worker Registration (Required for PWA)
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
 }
 </script>
 </body>
