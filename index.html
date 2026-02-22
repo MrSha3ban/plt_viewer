@@ -443,6 +443,22 @@ class HPGLEngine {
 }
 
 const engine = new HPGLEngine();
+    // This handles the file when opened from WhatsApp/Android System
+if ('launchQueue' in window) {
+    launchQueue.setConsumer((launchParams) => {
+        if (launchParams.files && launchParams.files.length) {
+            const fileHandle = launchParams.files[0];
+            fileHandle.getFile().then(file => {
+                engine.handleFile(file); // Sends file to your existing engine
+            });
+        }
+    });
+}
+
+// Service Worker Registration (Required for PWA)
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
 </script>
 </body>
 </html>
