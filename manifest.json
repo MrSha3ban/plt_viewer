@@ -14,12 +14,13 @@
     }
   ],
   "file_handlers": [
-    {
-      "action": "/plt_viewer/",
-      "accept": {
-        "application/x-plt": [".plt"],
-        "text/plain": [".plt", ".hpgl"]
-      }
+  {
+    "action": "/plt_viewer/",
+    "accept": {
+      "application/octet-stream": [".plt", ".hpgl"],
+      "text/plain": [".plt", ".hpgl"],
+      "application/x-plt": [".plt"]
     }
-  ]
+  }
+]
 }
