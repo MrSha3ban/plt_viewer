@@ -1,0 +1,25 @@
+{
+  "name": "MarkerCAD Pro Viewer",
+  "short_name": "MarkerCAD",
+  "start_url": "/plt_viewer/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0078d4",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/MrSha3ban/Website/main/assets/img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/plt_viewer/",
+      "accept": {
+        "application/x-plt": [".plt"],
+        "text/plain": [".plt", ".hpgl"]
+      }
+    }
+  ]
+}
